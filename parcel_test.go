@@ -34,9 +34,10 @@ func TestAddGetDelete(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
-	defer db.Close()
+
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 	id, err := store.Add(parcel)
@@ -47,10 +48,8 @@ func TestAddGetDelete(t *testing.T) {
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
 	parcelTest, err := store.Get(id)
 	require.NoError(t, err)
-	assert.Equal(t, parcel.Client, parcelTest.Client)
-	assert.Equal(t, parcel.Status, parcelTest.Status)
-	assert.Equal(t, parcel.Address, parcelTest.Address)
-	assert.Equal(t, parcel.CreatedAt, parcelTest.CreatedAt)
+	parcel.Number = id
+	assert.Equal(t, parcel, parcelTest)
 
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
@@ -66,9 +65,10 @@ func TestSetAddress(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
-	defer db.Close()
+
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
 	id, err := store.Add(parcel)
@@ -91,9 +91,9 @@ func TestSetStatus(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
+	defer db.Close()
 	store := NewParcelStore(db)
 	parcel := getTestParcel()
-	defer db.Close()
 
 	// add
 	// добавьте новую посылку в БД, убедитесь в отсутствии ошибки и наличии идентификатора
@@ -116,8 +116,8 @@ func TestGetByClient(t *testing.T) {
 	// prepare
 	db, err := sql.Open("sqlite", "tracker.db")
 	require.NoError(t, err)
-	store := NewParcelStore(db)
 	defer db.Close()
+	store := NewParcelStore(db)
 
 	parcels := []Parcel{
 		getTestParcel(),
@@ -157,10 +157,7 @@ func TestGetByClient(t *testing.T) {
 		// убедитесь, что все посылки из storedParcels есть в parcelMap
 		// убедитесь, что значения полей полученных посылок заполнены верно
 		assert.Equal(t, parcel, parcelMap[parcel.Number])
-		if _, ok := parcelMap[parcel.Number]; !ok {
-			t.Errorf("parcel %d not found in parcelMap", parcel.Number)
-		} else {
-			assert.Equal(t, parcelMap[parcel.Number], parcel)
-		}
+		require.True(t, true, parcelMap[parcel.Number])
+		assert.Equal(t, parcelMap[parcel.Number], parcel)
 	}
 }
